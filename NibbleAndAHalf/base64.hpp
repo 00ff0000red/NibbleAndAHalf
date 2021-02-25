@@ -59,7 +59,7 @@ namespace base64 {
 		using usize = std::size_t const;
 
 		ustring_view const operator""_usv(
-			char const * const data,
+			ptr<char const> data,
 			usize length
 		) noexcept(true) {
 			return ustring_view {
@@ -69,7 +69,7 @@ namespace base64 {
 		}
 
 		ustring const operator""_us(
-			char const * const data,
+			ptr<char const> data,
 			usize length
 		) {
 			return ustring {
@@ -135,7 +135,7 @@ namespace base64 {
 	// Converts binary data of length to base64 characters.
 	detail::opt_ustring encode(
 		detail::ustring_view const input
-	) noexcept(true) {
+	) /*noexcept(true)*/ {
 		using namespace detail;
 
 		ptr<u8> data = input.data();
@@ -167,11 +167,15 @@ namespace base64 {
 		ptr<mut<u8>> res = _res.data();
 
 		mut<usize> rc = 0u; // result counter
-		mut<usize> byteNo = 0u; // I need this after the loop
-		for (; byteNo <= length - 3u; byteNo += 3u ) {
-			u8 byte0 = data[byteNo + 0u];
-			u8 byte1 = data[byteNo + 1u];
-			u8 byte2 = data[byteNo + 2u];
+		mut<usize> byte_no = 0u; // I need this after the loop
+
+		// be careful about unsigned overflow, don't subtract from length
+		for (; byte_no + 3u <= length; byte_no += 3u ) {
+			auto const temp = data + byte_no;
+
+			u8 byte0 = temp[0u];
+			u8 byte1 = temp[1u];
+			u8 byte2 = temp[2u];
 
 			res[rc++] = b64[byte0 >> 2u];
 			res[rc++] = b64[((0x3u & byte0) << 4u) + (byte1 >> 4u)];
@@ -180,15 +184,15 @@ namespace base64 {
 		}
 
 		if ( 2u == pad ) {
-			u8 temp = data[byteNo];
+			u8 temp = data[byte_no];
 
 			res[rc++] = b64[temp >> 2u];
 			res[rc++] = b64[(0x3u & temp) << 4u];
 			res[rc++] = u8'=';
 			res[rc++] = u8'=';
 		} else if ( 1u == pad ) {
-			u8 temp0 = data[byteNo];
-			u8 temp1 = data[byteNo + 1u];
+			u8 temp0 = data[byte_no];
+			u8 temp1 = data[byte_no + 1u];
 
 			res[rc++] = b64[temp0 >> 2u];
 			res[rc++] = b64[((0x3u & temp0) << 4u) + (temp1 >> 4u)];
@@ -237,9 +241,11 @@ namespace base64 {
 		ptr<mut<u8>> res = _res.data();
 
 		mut<usize> cb = 0u;
-		mut<usize> charNo = 0u;
-		for (; charNo <= length - 4u - pad; charNo += 4u ) {
-			auto const temp = data + charNo;
+		mut<usize> char_no = 0u;
+
+		for (; char_no + (4u + pad) <= length; char_no += 4u ) {
+			auto const temp = data + char_no;
+
 			u8 A = unb64[temp[0u]];
 			u8 B = unb64[temp[1u]];
 			u8 C = unb64[temp[2u]];
@@ -251,7 +257,7 @@ namespace base64 {
 		}
 
 		{
-			ptr<u8> temp = data + charNo;
+			ptr<u8> temp = data + char_no;
 
 			if ( 1u == pad ) {
 				u8 A = unb64[temp[0u]];
