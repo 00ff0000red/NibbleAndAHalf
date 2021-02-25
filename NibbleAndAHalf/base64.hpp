@@ -61,7 +61,7 @@ namespace base64 {
 		ustring_view const operator""_usv(
 			char const * const data,
 			usize length
-		) {
+		) noexcept(true) {
 			return ustring_view {
 				reinterpret_cast<ptr<u8>>(data),
 				length
@@ -135,7 +135,7 @@ namespace base64 {
 	// Converts binary data of length to base64 characters.
 	detail::opt_ustring encode(
 		detail::ustring_view const input
-	) {
+	) noexcept(true) {
 		using namespace detail;
 
 		ptr<u8> data = input.data();
@@ -203,7 +203,7 @@ namespace base64 {
 
 	detail::opt_ustring decode(
 		detail::ustring_view const input
-	) {
+	) noexcept(true) {
 		using namespace detail;
 
 		ptr<u8> data = input.data();
