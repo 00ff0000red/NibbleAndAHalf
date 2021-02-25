@@ -1,9 +1,9 @@
 NibbleAndAHalf
 ==============
 
-"Nibble And A Half" is a C++ library that provides fast base64 encoding and decoding, all in a single header file.
+Forked from "Nibble And A Half," this is a C++ library that provides fast base64 encoding and decoding, all in a single header file.
 
-- All test related functions moved to testbase64.h.  To use, only need #include "base64.hpp":
+- To use, only need #include "base64.hpp":
   https://github.com/00ff0000red/NibbleAndAHalf/blob/master/NibbleAndAHalf/base64.hpp
 
 The header provides the following API:
