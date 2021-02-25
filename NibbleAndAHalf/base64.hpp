@@ -135,7 +135,7 @@ namespace base64 {
 	// Converts binary data of length to base64 characters.
 	detail::opt_ustring encode(
 		detail::ustring_view const input
-	) /*noexcept(true)*/ {
+	) noexcept(true) {
 		using namespace detail;
 
 		ptr<u8> data = input.data();
