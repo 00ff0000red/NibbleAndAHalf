@@ -9,9 +9,9 @@ Forked from "Nibble And A Half," this is a C++ library that provides fast base64
 The header provides the following API:
 ```c++
 namespace base64 {
-    std::optional<ustring> encode(ustring_view const) nothrow(true);
+    std::optional<ustring> encode(ustring_view const) noexcept(true);
 
-    std::optional<ustring> decode(ustring_view const) nothrow(true);
+    std::optional<ustring> decode(ustring_view const) noexcept(true);
 }
 ```
 
