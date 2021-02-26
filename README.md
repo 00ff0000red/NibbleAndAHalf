@@ -21,4 +21,6 @@ Where ustring is a type alias of `std::u8string`, and `ustring_view` is an alias
 
 `decode` returns an empty `std::optional` if the string contains any invalid base64 characters, whereas `decode_nocheck` will treat them as if they were all `'A'` characters.
 
+According to the original author, from whom this code is forked from, using `decode_nocheck` should yield at least 3x performance gains.
+
 Nothing is introduced into the global scope by importing the file.
