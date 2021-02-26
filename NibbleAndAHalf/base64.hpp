@@ -49,7 +49,7 @@ namespace base64 {
 		using u8 = decltype(u8'\0') const;
 
 		static_assert(
-			!std::is_same_v<u8, char>,
+			!std::is_same_v<u8, char const>,
 			"`char8_t` should not be equivalent to `char`; run on C++2a or newer"
 		);
 
@@ -126,11 +126,11 @@ namespace base64 {
 			});
 			// Could also do (pad = 3 - modulus_length), but that gives 3 when (modulus_length == 0).
 			// 0 => 0
-			// 1 => 1 pad 2
-			// 2 => 2 pad 1
-			// 3 => 0 no pad
-			// 4 => 1 pad 2
-			// 5 => 2 pad 1
+			// 1 => 1; pad 2
+			// 2 => 2; pad 1
+			// 3 => 0; no pad
+			// 4 => 1; pad 2
+			// 5 => 2; pad 1
 
 			u8string return_value;
 
@@ -216,11 +216,12 @@ namespace base64 {
 		// Checks the integrity of a base64 string to make sure it is
 		// made up of only characters in the base64 alphabet (array b64)
 		inline bool is_valid_base64_char(u8 ch) {
-			// return 64u != unb64[ch];
+			// return 0u != unb64[ch] && u8'A' != ch;
+
 			return (u8'0' <= ch && ch <= u8'9') // between 0-9
 				|| (u8'A' <= ch && ch <= u8'Z') // between A-Z
 				|| (u8'a' <= ch && ch <= u8'z') // between a-z
-				|| u8'+' == ch || u8'/' == ch; // other 2 valid chars, + ending chrs
+				|| (ch == u8'+' || ch == u8'/'); // other 2 valid chars, + ending chrs
 		}
 
 		bool base64integrity(
@@ -241,21 +242,19 @@ namespace base64 {
 
 			// Only last 2 can be '='
 			// Check 2nd last:
-			if ( u8'=' == ascii[i] ) {
 				// If the 2nd last is = the last MUST be = too
-				if ( u8'=' != ascii[1u + i] ) {
-					return false;
-				}
-			} else if ( !is_valid_base64_char( ascii[i] ) ) { // not '=' or valid base64
+			if ( u8'=' == ascii[i] && u8'=' != ascii[1u + i] ) {
+				return false;
+			} else if ( !is_valid_base64_char( ascii[i] ) ) {
+				// not '=' or valid base64
 				// 2nd last was invalid and not '='
 				return false;
 			}
 
 			// check last
+			auto const last_character = ascii[1u + i];
 
-			++i;
-
-			return !( u8'=' != ascii[i] && !is_valid_base64_char( ascii[i] ) );
+			return !( u8'=' != last_character && !is_valid_base64_char( last_character ) );
 			// (last char) string is not valid base64; Otherwise b64 string was valid.
 		}
 
@@ -265,7 +264,7 @@ namespace base64 {
 		) noexcept(true) {
 			if constexpr (checkValidity) {
 				if ( !base64integrity( input ) ) {
-					// `nullopt` if bad integrity.
+					// bad integrity.
 					return opt_ustring {
 						std::nullopt
 					};
