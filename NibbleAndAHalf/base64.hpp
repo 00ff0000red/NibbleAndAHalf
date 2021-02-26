@@ -27,6 +27,8 @@ will.sherif@gmail.com
 
 YWxsIHlvdXIgYmFzZSBhcmUgYmVsb25nIHRvIHVz
 
+Updated by @xxpertHacker
+
 */
 
 #pragma once
@@ -87,7 +89,7 @@ namespace base64 {
 		using opt_ustring = std::optional<u8string>;
 
 		// Converts binary data of length to base64 characters.
-		opt_ustring encode(
+		opt_ustring _encode(
 			u8string_view const input
 		) noexcept(true) {
 			// I look at your data like the stream of unsigned bytes that it is
@@ -237,14 +239,14 @@ namespace base64 {
 			auto const last_character = ascii[1u + i];
 
 			return !( u8'=' != last_character && !is_valid_base64_char( last_character ) );
-			// (last char) string is not valid base64; Otherwise b64 string was valid.
+			// (last char) string is not valid base64; Otherwise base64 string was valid.
 		}
 
-		template<bool const checkValidity>
-		opt_ustring decode(
+		template<bool const check_validity>
+		opt_ustring _decode(
 			u8string_view const input
 		) noexcept(true) {
-			if constexpr (checkValidity) {
+			if constexpr (check_validity) {
 				if ( !base64integrity( input ) ) {
 					// bad integrity.
 					return opt_ustring {
@@ -361,10 +363,20 @@ namespace base64 {
 			};
 		}
 
+		using func_t = decltype(_encode)&;
+
+		// `encode` as funcref is for consistency in the API
+		constexpr func_t encode = _encode;
+
+		constexpr func_t decode = _decode<true>;
+
+		constexpr func_t decode_nocheck = _decode<false>;
+
 	} // namespace base64::detail
 
-	constexpr auto const& encode = detail::encode;
-	constexpr auto const& decode = detail::decode<true>;
-	constexpr auto const& decode_nocheck = detail::decode<false>;
+	// leak three into outer scope (base64)
+	using detail::encode;
+	using detail::decode;
+	using detail::decode_nocheck;
 
 } // namespace base64
