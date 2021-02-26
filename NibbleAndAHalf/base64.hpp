@@ -46,29 +46,34 @@ namespace base64 {
 		template <typename T>
 		using ptr = T * const;
 
-		using u8 = decltype(u8'\0') const; // clang C++2a; char8_t isn't a keyword yet ;)
+		using u8 = decltype(u8'\0') const;
 
-		using ustring_view = std::basic_string_view<mut<u8>>;
+		static_assert(
+			!std::is_same_v<u8, char>,
+			"`char8_t` should not be equivalent to `char`; run on C++2a or newer"
+		);
 
-		using ustring = std::basic_string<mut<u8>>;
+		using u8string_view = std::basic_string_view<mut<u8>>;
+
+		using u8string = std::basic_string<mut<u8>>;
 
 		using usize = std::size_t const;
 
-		constexpr ustring_view const operator""sv(
+		constexpr u8string_view const operator""sv(
 			ptr<u8> data,
 			usize length
 		) noexcept(true) {
-			return ustring_view {
+			return u8string_view {
 				data,
 				length
 			};
 		}
 
-		ustring const operator""s(
+		u8string const operator""s(
 			ptr<u8> data,
 			usize length
 		) {
-			return ustring {
+			return u8string {
 				data,
 				length
 			};
@@ -99,11 +104,11 @@ namespace base64 {
 			['8'] = 60, ['9'] = 61, ['+'] = 62, ['/'] = 63,
 		};
 
-		using opt_ustring = std::optional<ustring>;
+		using opt_ustring = std::optional<u8string>;
 
 		// Converts binary data of length to base64 characters.
 		opt_ustring encode(
-			ustring_view const input
+			u8string_view const input
 		) noexcept(true) {
 			// I look at your data like the stream of unsigned bytes that it is
 			ptr<u8> data = input.data();
@@ -127,12 +132,12 @@ namespace base64 {
 			// 4 => 1 pad 2
 			// 5 => 2 pad 1
 
-			ustring return_value;
+			u8string return_value;
 
 			try {
 				usize final_length = 4u * (length + pad) / 3u;
 
-				return_value = ustring(final_length, u8'\0');
+				return_value = u8string(final_length, u8'\0');
 			} catch(std::bad_alloc const&) {
 				return opt_ustring {
 					std::nullopt
@@ -219,7 +224,7 @@ namespace base64 {
 		}
 
 		bool base64integrity(
-			ustring_view const potentially_invalid_base64
+			u8string_view const potentially_invalid_base64
 		) {
 			u8 * const ascii = potentially_invalid_base64.data();
 			usize length = potentially_invalid_base64.length();
@@ -256,7 +261,7 @@ namespace base64 {
 
 		template<bool const checkValidity>
 		opt_ustring decode(
-			ustring_view const input
+			u8string_view const input
 		) noexcept(true) {
 			if constexpr (checkValidity) {
 				if ( !base64integrity( input ) ) {
@@ -290,7 +295,7 @@ namespace base64 {
 			u8 pad = static_cast<u8>(u8'=' == data[length - 1u])
 				   + static_cast<u8>(u8'=' == data[length - 2u]);
 
-			ustring return_value;
+			u8string return_value;
 
 			try {
 				// You take the ascii string len and divide it by 4
@@ -298,7 +303,7 @@ namespace base64 {
 				// get #octets total.
 				usize final_length = length / 4u * 3u - pad;
 
-				return_value = ustring(final_length, u8'\0');
+				return_value = u8string(final_length, u8'\0');
 			} catch(std::bad_alloc const&) {
 				return opt_ustring {
 					std::nullopt
