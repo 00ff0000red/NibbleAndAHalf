@@ -46,11 +46,11 @@ namespace base64 {
 		template <typename T>
 		using ptr = T * const;
 
-		using u8 = decltype(u8'\0') const;
+		using u8 = decltype(u8'\0') const; // clang C++2a; char8_t isn't a keyword yet ;)
 
 		static_assert(
 			!std::is_same_v<u8, char const>,
-			"`char8_t` should not be equivalent to `char`; run on C++2a or newer"
+			u8"`char8_t` should not be equivalent to `char`; run on C++2a or newer"
 		);
 
 		using u8string_view = std::basic_string_view<mut<u8>>;
@@ -58,26 +58,6 @@ namespace base64 {
 		using u8string = std::basic_string<mut<u8>>;
 
 		using usize = std::size_t const;
-
-		constexpr u8string_view const operator""sv(
-			ptr<u8> data,
-			usize length
-		) noexcept(true) {
-			return u8string_view {
-				data,
-				length
-			};
-		}
-
-		u8string const operator""s(
-			ptr<u8> data,
-			usize length
-		) {
-			return u8string {
-				data,
-				length
-			};
-		}
 
 		constexpr u8 b64[] =
 			u8"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -242,10 +222,12 @@ namespace base64 {
 
 			// Only last 2 can be '='
 			// Check 2nd last:
-				// If the 2nd last is = the last MUST be = too
-			if ( u8'=' == ascii[i] && u8'=' != ascii[1u + i] ) {
-				return false;
-			} else if ( !is_valid_base64_char( ascii[i] ) ) {
+			// If the 2nd last is = the last MUST be = too
+			if ( u8'=' == ascii[i] ) {
+				if ( u8'=' != ascii[1u + i] ) {
+					return false;
+				}
+			} else if ( !is_valid_base64_char(ascii[i]) ) {
 				// not '=' or valid base64
 				// 2nd last was invalid and not '='
 				return false;
