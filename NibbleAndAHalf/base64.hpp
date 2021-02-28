@@ -48,16 +48,11 @@ namespace base64 {
 		template <typename T>
 		using ptr = T * const;
 
-		using u8 = decltype(u8'\0') const; // clang C++2a; char8_t isn't a keyword yet ;)
+		using u8 = char8_t const;
 
-		static_assert(
-			!std::is_same_v<u8, char const>,
-			u8"`char8_t` should not be equivalent to `char`; run on C++2a or newer"
-		);
+		using u8string_view = std::basic_string_view<char8_t>;
 
-		using u8string_view = std::basic_string_view<mut<u8>>;
-
-		using u8string = std::basic_string<mut<u8>>;
+		using u8string = std::basic_string<char8_t>;
 
 		using usize = std::size_t const;
 
@@ -126,7 +121,7 @@ namespace base64 {
 				};
 			}
 
-			ptr<mut<u8>> res = return_value.data();
+			ptr<char8_t> res = return_value.data();
 
 			// Counters
 			mut<usize> result_counter = 0u;
@@ -162,7 +157,7 @@ namespace base64 {
 				res[result_counter++] = b64[0x3Fu & byte2];
 			}
 
-			// The last 3 octets must be converted carefully as if len%3==1 or len%3==2 we must
+			// The last 3 octets must be converted carefully as if len % 3 == 1 or len % 3 == 2 we must
 			// "pretend" there are additional bits at the end.
 			if ( 2u == pad ) {
 				u8 temp = data[byte_no];
@@ -184,7 +179,7 @@ namespace base64 {
 				// - 3 sextets
 
 				res[result_counter++] = b64[temp0 >> 2u];
-				res[result_counter++] = b64[((0x3u & temp0) << 4u) + (temp1 >> 4u)]; // SEX2 formula
+				res[result_counter++] = b64[((0x3u & temp0) << 4u) + (temp1 >> 4u)]; // sex2 formula
 				res[result_counter++] = b64[(0x0Fu & temp1) << 2u]; // only part of SEX3 that comes from byte#1
 				res[result_counter++] = u8'=';
 			}
@@ -203,7 +198,7 @@ namespace base64 {
 			return (u8'0' <= ch && ch <= u8'9') // between 0-9
 				|| (u8'A' <= ch && ch <= u8'Z') // between A-Z
 				|| (u8'a' <= ch && ch <= u8'z') // between a-z
-				|| (ch == u8'+' || ch == u8'/'); // other 2 valid chars, + ending chrs
+				|| (u8'+' == ch || ch == u8'/'); // other 2 valid chars, + ending chrs
 		}
 
 		bool base64integrity(
@@ -293,7 +288,7 @@ namespace base64 {
 				};
 			}
 
-			ptr<mut<u8>> res = return_value.data();
+			ptr<char8_t> res = return_value.data();
 
 			mut<usize> counter = 0u; // counter for `data`
 			mut<usize> char_no = 0u; // counter for what base64 char we're currently decoding
