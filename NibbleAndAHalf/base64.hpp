@@ -7,7 +7,7 @@ version 1.0.0, April 17, 2013 143a
 Copyright (C) 2013 William Sherif
 
 This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
+warranty. In no event will the authors be held liable for any damages
 arising from the use of this software.
 
 Permission is granted to anyone to use this software for any purpose,
@@ -78,15 +78,38 @@ namespace base64 {
 			['w'] = 48, ['x'] = 49, ['y'] = 50, ['z'] = 51,
 			['0'] = 52, ['1'] = 53, ['2'] = 54, ['3'] = 55,
 			['4'] = 56, ['5'] = 57, ['6'] = 58, ['7'] = 59,
-			['8'] = 60, ['9'] = 61, ['+'] = 62, ['/'] = 63,
+			['8'] = 60, ['9'] = 61, ['+'] = 62, ['/'] = 63
+		};
+
+		// boolean version of unb64
+		// Checks the integrity of a base64 string to make sure it is
+		// made up of only characters in the base64 alphabet (array b64)
+		constexpr bool is_invalid_base64_char[0x100] = {
+			[ 0x0 ... 0xFF ] = true,
+			['A'] = false, ['B'] = false, ['C'] = false, ['D'] = false,
+			['E'] = false, ['F'] = false, ['G'] = false, ['H'] = false,
+			['I'] = false, ['J'] = false, ['K'] = false, ['L'] = false,
+			['M'] = false, ['N'] = false, ['O'] = false, ['P'] = false,
+			['Q'] = false, ['R'] = false, ['S'] = false, ['T'] = false,
+			['U'] = false, ['V'] = false, ['W'] = false, ['X'] = false,
+			['Y'] = false, ['Z'] = false, ['a'] = false, ['b'] = false,
+			['c'] = false, ['d'] = false, ['e'] = false, ['f'] = false,
+			['g'] = false, ['h'] = false, ['i'] = false, ['j'] = false,
+			['k'] = false, ['l'] = false, ['m'] = false, ['n'] = false,
+			['o'] = false, ['p'] = false, ['q'] = false, ['r'] = false,
+			['s'] = false, ['t'] = false, ['u'] = false, ['v'] = false,
+			['w'] = false, ['x'] = false, ['y'] = false, ['z'] = false,
+			['0'] = false, ['1'] = false, ['2'] = false, ['3'] = false,
+			['4'] = false, ['5'] = false, ['6'] = false, ['7'] = false,
+			['8'] = false, ['9'] = false, ['+'] = false, ['/'] = false
 		};
 
 		using opt_ustring = std::optional<u8string>;
 
 		// Converts binary data of length to base64 characters.
-		opt_ustring _encode(
+		u8string _encode(
 			u8string_view const input
-		) noexcept(true) {
+		) {
 			// I look at your data like the stream of unsigned bytes that it is
 			ptr<u8> data = input.data();
 			usize length = input.length();
@@ -109,17 +132,11 @@ namespace base64 {
 			// 4 => 1; pad 2
 			// 5 => 2; pad 1
 
-			u8string return_value;
-
-			try {
+			u8string return_value = ({
 				usize final_length = 4u * (length + pad) / 3u;
 
-				return_value = u8string(final_length, u8'\0');
-			} catch(std::bad_alloc const&) {
-				return opt_ustring {
-					std::nullopt
-				};
-			}
+				u8string(final_length, u8'\0');
+			});
 
 			ptr<char8_t> res = return_value.data();
 
@@ -184,34 +201,20 @@ namespace base64 {
 				res[result_counter++] = u8'=';
 			}
 
-			// copy and return
-			return opt_ustring {
-				return_value
-			};
+			return return_value;
 		}
 
-		// Checks the integrity of a base64 string to make sure it is
-		// made up of only characters in the base64 alphabet (array b64)
-		inline bool is_valid_base64_char(u8 ch) {
-			// return 0u != unb64[ch] && u8'A' != ch;
-
-			return (u8'0' <= ch && ch <= u8'9') // between 0-9
-				|| (u8'A' <= ch && ch <= u8'Z') // between A-Z
-				|| (u8'a' <= ch && ch <= u8'z') // between a-z
-				|| (u8'+' == ch || ch == u8'/'); // other 2 valid chars, + ending chrs
-		}
-
-		bool base64integrity(
+		bool base64_integrity(
 			u8string_view const potentially_invalid_base64
 		) {
-			u8 * const ascii = potentially_invalid_base64.data();
+			ptr<u8> ascii = potentially_invalid_base64.data();
 			usize length = potentially_invalid_base64.length();
 
 			// looking for bad characters
 			mut<usize> i = 0u; // used after loop
 
 			for (; 2u + i < length; ++i) {
-				if ( !is_valid_base64_char(ascii[i]) )  {
+				if ( is_invalid_base64_char[ascii[i]] )  {
 					// String is not valid base64
 					return false;
 				}
@@ -224,7 +227,7 @@ namespace base64 {
 				if ( u8'=' != ascii[1u + i] ) {
 					return false;
 				}
-			} else if ( !is_valid_base64_char(ascii[i]) ) {
+			} else if ( is_invalid_base64_char[ascii[i]] ) {
 				// not '=' or valid base64
 				// 2nd last was invalid and not '='
 				return false;
@@ -233,20 +236,18 @@ namespace base64 {
 			// check last
 			auto const last_character = ascii[1u + i];
 
-			return !( u8'=' != last_character && !is_valid_base64_char( last_character ) );
+			return !( u8'=' != last_character && is_invalid_base64_char[last_character] );
 			// (last char) string is not valid base64; Otherwise base64 string was valid.
 		}
 
 		template<bool const check_validity>
 		opt_ustring _decode(
 			u8string_view const input
-		) noexcept(true) {
+		) {
 			if constexpr (check_validity) {
-				if ( !base64integrity( input ) ) {
+				if ( false == base64_integrity( input ) ) {
 					// bad integrity.
-					return opt_ustring {
-						std::nullopt
-					};
+					return opt_ustring { std::nullopt };
 				}
 			}
 
@@ -273,20 +274,14 @@ namespace base64 {
 			u8 pad = static_cast<u8>(u8'=' == data[length - 1u])
 				   + static_cast<u8>(u8'=' == data[length - 2u]);
 
-			u8string return_value;
-
-			try {
+			u8string return_value = ({
 				// You take the ascii string len and divide it by 4
 				// to get #24lets (groups of 3 octets). You then * 3 to
 				// get #octets total.
 				usize final_length = length / 4u * 3u - pad;
 
-				return_value = u8string(final_length, u8'\0');
-			} catch(std::bad_alloc const&) {
-				return opt_ustring {
-					std::nullopt
-				};
-			}
+				u8string(final_length, u8'\0');
+			});
 
 			ptr<char8_t> res = return_value.data();
 
@@ -353,19 +348,15 @@ namespace base64 {
 				}
 			}
 
-			return opt_ustring {
-				return_value
-			};
+			return std::make_optional<u8string>(
+				std::forward<u8string>(return_value)
+			);
 		}
 
-		using func_t = decltype(_encode)&;
-
 		// `encode` as funcref is for consistency in the API
-		constexpr func_t encode = _encode;
-
-		constexpr func_t decode = _decode<true>;
-
-		constexpr func_t decode_nocheck = _decode<false>;
+		constexpr auto const& encode = _encode;
+		constexpr auto const& decode = _decode<true>;
+		constexpr auto const& decode_nocheck = _decode<false>;
 
 	} // namespace base64::detail
 
